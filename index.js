@@ -4,6 +4,7 @@ const dotenv = require('dotenv').config();
 const PORT = process.env.PORT;
 require('./conexion/conexion');
 const Usuario = require('./model/userModel');
+const bcrypt = require('bcrypt');
 const app = express();
 
 app.use(cors());
@@ -11,102 +12,63 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
-    res.send(`<h1>Soy el Back del MERN</h1>`)
+  res.send(`<h1>Soy el Back del MERN</h1>`);
 });
 
-
-/* Insertamos nuevos clientes */
 app.post('/usuarios', async (req, res) => {
-    console.log(req.body);
-    const { nombre, apellido, email, password } = req.body;
+  console.log(req.body);
+  const { nombre, apellido, email, password } = req.body;
 
-    console.log(`Mi nombre es ${nombre}, mi apellido es ${apellido}, mi email es ${email} y el password ${password}`);
+  console.log(`Mi nombre es ${nombre}, mi apellido es ${apellido}, mi email es ${email} y el password ${password}`);
 
-       //4. si no Existe, creamos un nuevo usuario
-    const nuevoUsuario = new Usuario(req.body);
+  // Realiza el hash de la contraseña antes de guardarla en la base de datos
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-    console.log(`1. Nuevo Usuario a guardar: ${nuevoUsuario}`);
+  // Crea un nuevo usuario con la contraseña hasheada
+  const nuevoUsuario = new Usuario({
+    nombre,
+    apellido,
+    email,
+    password: hashedPassword,
+  });
 
-    await nuevoUsuario.save();
+  console.log(`1. Nuevo Usuario a guardar: ${nuevoUsuario}`);
 
-    res.json({
-        saludo: 'Dato guardado'
-    })
+  await nuevoUsuario.save();
 
-
+  res.json({
+    saludo: 'Dato guardado'
+  });
 });
 
-/* obtenemos toda la lista de clientes */
-app.get('/clientes', async (req, res) => {
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
 
-    const personas = await Usuario.find({},
-        {
-            "nombre": 1,
-            "apellido": 1,
-            "email": 1,
-            "timestamp": 1
-        });
+  try {
+    // Busca al usuario en la base de datos por su email
+    const usuario = await Usuario.findOne({ email });
 
-    console.log(personas);
-
-    res.json({
-        personas 
-    })
-
-})
-
-/* Eliminalos los datos del cliente */
-app.delete('/clientes/:id', async (req, res) => {
-
-    const id = req.params.id;
-    
-    console.log(id);
-    
-    try {
-        const deleteUser = await Usuario.findByIdAndDelete(id);
-        console.log(deleteUser);
-        if(deleteUser){
-            console.log('Cliente Eliminado');
-            return res.status(200).send();
-        }else{
-            return res.status(404).send();
-        }
-    } catch (error) {
-        console.log(error);
+    if (!usuario) {
+      // El usuario no existe en la base de datos
+      return res.json({ success: false, message: 'Credenciales incorrectas. Por favor, verifica tus datos.' });
     }
 
-})
+    // Compara la contraseña ingresada con la contraseña hasheada en la base de datos
+    const passwordMatch = await bcrypt.compare(password, usuario.password);
 
-/* Actualizamos los datos del cliente */
-app.put('/clientes/:id', async (req, res) => {
-
-    const id = req.params.id;
-
-    const data = {
-        nombre: req.body.nombre,
-        apellido: req.body.apellido,
-        email: req.body.email,
-        password: req.body.password
+    if (!passwordMatch) {
+      // La contraseña no coincide
+      return res.json({ success: false, message: 'Credenciales incorrectas. Por favor, verifica tus datos.' });
     }
 
-    console.log(data);
-    console.log(id);
-    
-    try {
-        const updateUser = await Usuario.findByIdAndUpdate(id, data);
-        console.log(updateUser);
-        if(updateUser){
-            console.log('Cliente Actualizado');
-            return res.status(200).send();
-        }else{
-            return res.status(404).send();
-        }
-    } catch (error) {
-        console.log(error);
-    }
-
-})
+    // Las credenciales son válidas, el usuario se ha autenticado con éxito
+    return res.json({ success: true, message: 'Inicio de sesión exitoso.' });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: 'Ocurrió un error al iniciar sesión. Por favor, intenta nuevamente más tarde.' });
+  }
+});
 
 app.listen(PORT, () => {
-    console.log(`Servidor corriendo en el Puerto ${PORT}`);
-})
+  console.log(`Servidor corriendo en el Puerto ${PORT}`);
+});
