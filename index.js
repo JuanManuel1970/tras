@@ -113,6 +113,8 @@ app.post('/login', async (req, res) => {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
+    
+
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (passwordMatch) {
