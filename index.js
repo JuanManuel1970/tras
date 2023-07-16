@@ -7,9 +7,6 @@ const Usuario = require('./model/userModel');
 const bcrypt = require('bcrypt');
 const app = express();
 
-// Importamos Nodemailer
-const nodemailer = require('nodemailer');
-
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -113,8 +110,6 @@ app.post('/login', async (req, res) => {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
-    
-
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (passwordMatch) {
@@ -125,35 +120,6 @@ app.post('/login', async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: 'Error en el servidor' });
-  }
-});
-
-// Ruta para enviar el correo electrónico
-app.post('/send-email', async (req, res) => {
-  try {
-    const { email, nombre, apellido } = req.body;
-
-    const transporter = nodemailer.createTransport({
-      service: 'Gmail', // Puedes usar otro servicio de correo o configurar tu propio servidor de correo
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAILPASSWORD,
-      },
-    });
-
-    const mailOptions = {
-      from: process.env.EMAIL,
-      to: email,
-      subject: '¡Registro Exitoso!',
-      text: `¡Hola ${nombre} ${apellido}! Gracias por registrarte.`,
-    };
-
-    await transporter.sendMail(mailOptions);
-
-    res.status(200).json({ message: 'Correo electrónico enviado correctamente.' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Hubo un problema al enviar el correo electrónico.' });
   }
 });
 
