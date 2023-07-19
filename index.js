@@ -23,6 +23,7 @@ app.post('/usuarios', async (req, res) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
+  
   const nuevoUsuario = new Usuario({
     nombre,
     apellido,
