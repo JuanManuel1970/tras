@@ -44,6 +44,7 @@ app.get('/clientes', async (req, res) => {
     "nombre": 1,
     "apellido": 1,
     "email": 1,
+    "password": 1,
     "timestamp": 1
   });
 

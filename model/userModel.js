@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const { Schema } = require('mongoose');
 
-//configuramos con Schema nuestra collección de db
+
 const userSchema = new Schema({
     nombre: {
         type: String,
@@ -25,5 +25,5 @@ const userSchema = new Schema({
     }
 });
 
-//exportamos la configuración con el nombre de la colección
+
 module.exports = mongoose.model('Formularios', userSchema);
